@@ -6,7 +6,9 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,12 +53,28 @@ public class StartFragment extends Fragment
     {
         // Inflate the layout for this fragment
         View retView =inflater.inflate(R.layout.fragment_start, container, false);
-        EditText et_adminName = retView.findViewById(R.id.et_adminName);
-        EditText et_groupName = retView.findViewById(R.id.et_groupName);
+        final EditText et_adminName = retView.findViewById(R.id.et_adminName);
+        final EditText et_groupName = retView.findViewById(R.id.et_groupName);
         Button btn_createGroup = retView.findViewById(R.id.btn_createGroup);
 
         //if Create Group button is pushed
-        
+        btn_createGroup.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                //Log.i("Debug","Button pushed");
+                //send the two input string to the next fragment
+                String str_adminName = et_adminName.getText().toString();
+                String str_groupName = et_groupName.getText().toString();
+                QuestionsFragment questionsFragment = new QuestionsFragment();
+                FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+                fragmentTransaction.replace(R.id.fg_placeholder,questionsFragment.newInstance(str_adminName,str_groupName));
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+
+            }
+        });
 
         ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle("Log in");
         return retView;
