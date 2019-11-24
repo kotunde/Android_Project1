@@ -1,6 +1,7 @@
 package com.example.planningpokeruser;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.os.Bundle;
 
@@ -12,5 +13,11 @@ public class MainActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        StartFragment startFragment = new StartFragment();
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        fragmentTransaction.add(R.id.fg_placeholder,startFragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
     }
 }

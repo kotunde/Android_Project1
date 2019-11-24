@@ -136,6 +136,15 @@ public class  RVAdapter extends RecyclerView.Adapter<RVAdapter.MyViewHolder>
     {
         return mDataset.size();
     }
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return position;
+    }
 
     //get all of the question data from database, and count how many of the questions are active at that time
     public int checkActiveQuestions(final Question actualQuestion, final Switch switch_activation)
@@ -152,16 +161,16 @@ public class  RVAdapter extends RecyclerView.Adapter<RVAdapter.MyViewHolder>
                 {
                     Question question = questionSnapshot.getValue(Question.class);
                     questionList.add(question);
-                    //count number of active questions
-                    nrOfActiveQuestions = 0;
                     Log.d("DEBUG","Tomb merete: " + Integer.toString(questionList.size()));
-                    for (Question q:questionList)
+                }
+                //count number of active questions
+                nrOfActiveQuestions = 0;
+                for (Question q:questionList)
+                {
+                    Log.d("BEBUG  question state: ", q.getState());
+                    if (q.getState().equals("active"))
                     {
-                        Log.d("BEBUG  question state: ", q.getState());
-                        if (q.getState().equals("active"))
-                        {
-                            ++nrOfActiveQuestions;
-                        }
+                        ++nrOfActiveQuestions;
                     }
                 }
                 Log.d("DEBUG","nrOfActiveConnections: " + nrOfActiveQuestions);

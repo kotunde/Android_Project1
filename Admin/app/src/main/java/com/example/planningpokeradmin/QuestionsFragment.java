@@ -48,6 +48,7 @@ public class QuestionsFragment extends Fragment
     DatabaseReference dbReference;
     ArrayList<Question> questions;
     RVAdapter rvAdapter;
+    RecyclerView recyclerView;
 
     public QuestionsFragment()
     {
@@ -92,8 +93,8 @@ public class QuestionsFragment extends Fragment
 
         //RECYCLERVIEW
         // get the reference of RecyclerView
-        RecyclerView recyclerView = view.findViewById(R.id.rv_questionList);
-        recyclerView.setHasFixedSize(true);
+        recyclerView = view.findViewById(R.id.rv_questionList);
+        //recyclerView.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
         recyclerView.setLayoutManager(linearLayoutManager);
         //  call the constructor of RVAdapter to send the reference and data to Adapter
@@ -109,7 +110,29 @@ public class QuestionsFragment extends Fragment
                 fragmentTransaction.commit();
             }
         };
+        rvAdapter = new RVAdapter(getActivity(),questions,listener);
         recyclerView.setAdapter(rvAdapter);
+
+        dbReference = FirebaseDatabase.getInstance().getReference("Question");
+        dbReference.addListenerForSingleValueEvent(new ValueEventListener()
+        {
+           @Override
+           public void onDataChange(@NonNull DataSnapshot dataSnapshot)
+           {
+               questions.clear();
+               for (DataSnapshot questionSnapshot: dataSnapshot.getChildren())
+               {
+                   Question question = questionSnapshot.getValue(Question.class);
+					if(question.getGroupName().equals(mGroupName))
+                    {
+                   		questions.add(question);
+					}
+               }
+               rvAdapter = new RVAdapter(getActivity(),questions,listener);
+               recyclerView.setAdapter(rvAdapter);
+           }
+           @Override
+           public void onCancelled(@NonNull DatabaseError databaseError) { }});
 
         //show up dialogFragment where admin can enter a new question
         final Button addQuestion = view.findViewById(R.id.btn_addQuestion);
@@ -122,7 +145,7 @@ public class QuestionsFragment extends Fragment
             }
         });
 
-        dbReference = FirebaseDatabase.getInstance().getReference().child("Question");
+
         dbReference.addChildEventListener(new ChildEventListener()
         {
             @Override
@@ -133,8 +156,8 @@ public class QuestionsFragment extends Fragment
                 if (newQuesetion.getGroupName().equals(mGroupName))
                 {
                     questions.add(newQuesetion);
-                    RVAdapter rvAdapter = new RVAdapter(getActivity(),questions,listener);
-                    RecyclerView recyclerView = view.findViewById(R.id.rv_questionList);
+                    rvAdapter = new RVAdapter(getActivity(),questions,listener);
+                    //RecyclerView recyclerView = view.findViewById(R.id.rv_questionList);
                     //recyclerView.setHasFixedSize(true);
                     LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
                     recyclerView.setLayoutManager(linearLayoutManager);

@@ -1,4 +1,4 @@
-package com.example.planningpokeradmin;
+package com.example.planningpokeruser;
 
 import android.content.Context;
 import android.net.Uri;
@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,7 +34,7 @@ public class AnswersFragment extends Fragment
     private String mAdminName;
     private String mGroupName;
     private ArrayList<Answer> answers;
-	DatabaseReference dbReference;
+    DatabaseReference dbReference;
     AnswerAdapter answerAdapter;
     RecyclerView recyclerView;
 
@@ -74,7 +75,7 @@ public class AnswersFragment extends Fragment
 
     private void initView(final View view)
     {
-        ((AppCompatActivity) getActivity()).getSupportActionBar().setTitle(mGroupName + " - Answers");
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setTitle("Answers");
         answers = new ArrayList<>();
 
         //RECYCLERVIEW
@@ -86,32 +87,38 @@ public class AnswersFragment extends Fragment
         //  call the constructor of RVAdapter to send the reference and data to Adapter
         answerAdapter = new AnswerAdapter(getActivity(),answers);
         recyclerView.setAdapter(answerAdapter);
-	//for populate recycler view on start with data from firebase
-        dbReference = FirebaseDatabase.getInstance().getReference("Answers");
+
+        //for populate recycler view on start with data from firebase
+        dbReference = FirebaseDatabase.getInstance().getReference().child("Answers");
         dbReference.addListenerForSingleValueEvent(new ValueEventListener()
         {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot)
             {
                 answers.clear();
+                Log.d("MYDEBUG","OnDataChange:  answer.clear()");
                 for (DataSnapshot answerSpanshot: dataSnapshot.getChildren())
                 {
+                    Log.d("MYDEBUG","Loop, list size : "+ answers.size());
                     Answer answer = answerSpanshot.getValue(Answer.class);
                     if (answer.getGroupName().equals(mGroupName))
                     {
                         answers.add(answer);
                     }
-                    
                 }
-				answerAdapter = new AnswerAdapter(getActivity(),answers);
+                Log.d("MYDEBUG","Adapter refreshed, list size : "+answers.size());
+                answerAdapter = new AnswerAdapter(getActivity(),answers);
                 recyclerView.setAdapter(answerAdapter);
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) { }
+            public void onCancelled(@NonNull DatabaseError databaseError)
+            {
+
+            }
         });
 
-		//for update recyclerview on every new answer
+        //for update recyclerview on every new answer
         dbReference.addChildEventListener(new ChildEventListener()
         {
             @Override
@@ -135,6 +142,5 @@ public class AnswersFragment extends Fragment
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
-
     }
 }

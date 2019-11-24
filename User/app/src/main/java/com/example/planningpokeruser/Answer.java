@@ -1,4 +1,5 @@
-package com.example.planningpokeradmin;
+package com.example.planningpokeruser;
+
 
 public class Answer
 {
@@ -6,15 +7,22 @@ public class Answer
     String groupName;
     String questionId;
     String answer;
+    String answerId;
 
-    public Answer() {}
+    public Answer(){}
 
-    public Answer(String userName, String groupName, String questionId, String answer)
+    public Answer(String answerId,String userName, String groupName, String questionId, String answer)
     {
+        this.answerId = answerId;
         this.userName = userName;
         this.groupName = groupName;
         this.questionId = questionId;
         this.answer = answer;
+    }
+
+    public String getAnswerId()
+    {
+        return answerId;
     }
 
     public String getUserName()

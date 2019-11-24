@@ -54,7 +54,7 @@ public class StartFragment extends Fragment
         final EditText et_groupName = retView.findViewById(R.id.et_groupName);
         Button btn_joinGroup = retView.findViewById(R.id.btn_joinGroup);
 
-        //if Create Group button is pushed
+        //if Join Group button is pushed
         btn_joinGroup.setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -62,11 +62,11 @@ public class StartFragment extends Fragment
             {
                 //Log.i("Debug","Button pushed");
                 //send the two input string to the next fragment
-                String str_adminName = et_userName.getText().toString();
+                String str_userName = et_userName.getText().toString();
                 String str_groupName = et_groupName.getText().toString();
                 QuestionsFragment questionsFragment = new QuestionsFragment();
                 FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
-                fragmentTransaction.replace(R.id.fg_placeholder,questionsFragment.newInstance(str_adminName,str_groupName));
+                fragmentTransaction.replace(R.id.fg_placeholder,questionsFragment.newInstance(str_userName,str_groupName));
                 fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
 

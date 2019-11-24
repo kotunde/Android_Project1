@@ -33,21 +33,18 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link QuestionsFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class QuestionsFragment extends Fragment
 {
-    private static final String ARG_ADMIN_NAME = "adminName";
+    private static final String ARG_USER_NAME = "adminName";
     private static final String ARG_GROUP_ID = "groupId";
 
-    private String mAdminName;
+    private String mUserName;
     private String mGroupName;
     DatabaseReference dbReference;
-    ArrayList<Question> questions;
-    RVAdapter rvAdapter;
+    ArrayList<Question> questionList;
+    QuestionAdapter questionAdapter;
+    RecyclerView recyclerView;
+    ArrayList<String> mKeys = new ArrayList<String>();
 
     public QuestionsFragment()
     {
@@ -58,7 +55,7 @@ public class QuestionsFragment extends Fragment
     {
         QuestionsFragment fragment = new QuestionsFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_ADMIN_NAME, param1);
+        args.putString(ARG_USER_NAME, param1);
         args.putString(ARG_GROUP_ID, param2);
         fragment.setArguments(args);
         return fragment;
@@ -68,10 +65,10 @@ public class QuestionsFragment extends Fragment
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        //get parameter sent from activity
+        //get parameter sent from previous fragment
         if (getArguments() != null)
         {
-            mAdminName = getArguments().getString(ARG_ADMIN_NAME);
+            mUserName = getArguments().getString(ARG_USER_NAME);
             mGroupName = getArguments().getString(ARG_GROUP_ID);
         }
     }
@@ -83,46 +80,71 @@ public class QuestionsFragment extends Fragment
         // Inflate the layout for this fragment
         View retView = inflater.inflate(R.layout.fragment_questions, container, false);
         initView(retView);
+        recyclerView.setAdapter(questionAdapter);
         return retView;
     }
+
     private void initView(final View view)
     {
         ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(mGroupName+" - Questions");
-        questions = new ArrayList<>();
+        questionList = new ArrayList<>();
+
+        dbReference = FirebaseDatabase.getInstance().getReference("Question");
 
         //RECYCLERVIEW
         // get the reference of RecyclerView
-        RecyclerView recyclerView = view.findViewById(R.id.rv_questionList);
-        recyclerView.setHasFixedSize(true);
+        recyclerView = view.findViewById(R.id.rv_questionList);
+        //recyclerView.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
         recyclerView.setLayoutManager(linearLayoutManager);
-        //  call the constructor of RVAdapter to send the reference and data to Adapter
-        final RVAdapter.RecyclerViewClickListener listener = new RVAdapter.RecyclerViewClickListener()
+        //  call the constructor of QuesetionAdapter to send the reference and data to Adapter
+        final QuestionAdapter.RecyclerViewClickListener listener = new QuestionAdapter.RecyclerViewClickListener()
         {
             @Override
             public void onClick(String questionId)
             {
-                AnswersFragment answersFragment = new AnswersFragment();
+                //Toast.makeText(getContext(), "Votefragment called", Toast.LENGTH_LONG).show();
+                VoteFragment answersFragment = new VoteFragment();
                 FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
-                fragmentTransaction.replace(R.id.fg_placeholder,answersFragment.newInstance(mAdminName,mGroupName));
+                fragmentTransaction.replace(R.id.fg_placeholder,answersFragment.newInstance(mUserName,mGroupName,questionId));
                 fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
+
             }
         };
-        recyclerView.setAdapter(rvAdapter);
+        questionAdapter = new QuestionAdapter(getActivity(),questionList,listener);
+        recyclerView.setAdapter(questionAdapter);
 
-        //show up dialogFragment where admin can enter a new question
-        final Button addQuestion = view.findViewById(R.id.btn_addQuestion);
-        addQuestion.setOnClickListener(new View.OnClickListener()
+        //get data from database
+        dbReference.addListenerForSingleValueEvent(new ValueEventListener()
         {
             @Override
-            public void onClick(View v)
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot)
             {
-                showDialog();
+                questionList.clear();
+                for (DataSnapshot questionSnapshot: dataSnapshot.getChildren())
+                {
+                    Question question = questionSnapshot.getValue(Question.class);
+                    if(question.getGroupName().equals(mGroupName))
+                    {
+                        questionList.add(question);
+                        String key = questionSnapshot.getKey();
+                        mKeys.add(key);
+                    }
+
+                }
+                questionAdapter = new QuestionAdapter(getActivity(),questionList,listener);
+                recyclerView.setAdapter(questionAdapter);
+                //questionAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError)
+            {
+
             }
         });
 
-        dbReference = FirebaseDatabase.getInstance().getReference().child("Question");
         dbReference.addChildEventListener(new ChildEventListener()
         {
             @Override
@@ -132,17 +154,33 @@ public class QuestionsFragment extends Fragment
                 //display question only if it belongs to this group
                 if (newQuesetion.getGroupName().equals(mGroupName))
                 {
-                    questions.add(newQuesetion);
-                    RVAdapter rvAdapter = new RVAdapter(getActivity(),questions,listener);
-                    RecyclerView recyclerView = view.findViewById(R.id.rv_questionList);
+                    questionList.add(newQuesetion);
+                    String key = dataSnapshot.getKey();
+                    mKeys.add(key);
+                    //questionAdapter = new QuestionAdapter(getActivity(),questionList,listener);
+                    //RecyclerView recyclerView = view.findViewById(R.id.rv_questionList);
                     //recyclerView.setHasFixedSize(true);
                     LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
                     recyclerView.setLayoutManager(linearLayoutManager);
-                    recyclerView.setAdapter(rvAdapter);
+                    recyclerView.setAdapter(questionAdapter);
+                    //questionAdapter.notifyDataSetChanged();
                 }
             }
             @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s)
+            {
+                Question question = dataSnapshot.getValue(Question.class);
+                if(question.getGroupName().equals(mGroupName))
+                {
+                    String key =  dataSnapshot.getKey();
+                    int index = mKeys.indexOf(key);
+                    questionList.set(index,question);
+                }
+                LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
+                recyclerView.setLayoutManager(linearLayoutManager);
+                recyclerView.setAdapter(questionAdapter);
+                //questionAdapter.notifyDataSetChanged();
+            }
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) { }
             @Override
@@ -153,26 +191,6 @@ public class QuestionsFragment extends Fragment
                 Toast.makeText(getContext(), "Some error ocurred", Toast.LENGTH_LONG).show();
             }
         });
-
-
-
-    }
-    public void showDialog()
-    {
-        //display dialog fragment
-        FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
-        ///??? ez milyen esetben fordulhat elo?
-        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
-        if (prev != null)
-        {
-            fragmentTransaction.remove(prev);
-        }
-        fragmentTransaction.addToBackStack(null);
-        //create and show dialog
-        AddQuestionFragment addQuestionFragment = AddQuestionFragment.newInstance(mAdminName,mGroupName);
-        //for showing dialog fragment title, (also see: values > styles.xml)
-        addQuestionFragment.setStyle(DialogFragment.STYLE_NORMAL,R.style.CustomDialog);
-        addQuestionFragment.show(fragmentTransaction,"dialog");
     }
 
 

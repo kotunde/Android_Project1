@@ -4,11 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".QuestionsFragment">
-
+    tools:context=".AnswersFragment">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_questionList"
+        android:id="@+id/rv_answerList"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginStart="16dp"
