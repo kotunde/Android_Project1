@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -22,6 +23,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -48,6 +50,9 @@ public class VoteFragment extends Fragment
     String questionToAnswer;
     String answer;
     Answer userAnswer;
+    Boolean userVoted;
+    String questionState="active";
+    String str_userActualAnswer;
 
     public VoteFragment()
     {
@@ -90,6 +95,8 @@ public class VoteFragment extends Fragment
         ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle("Vote");
         final ArrayList<String> buttonText = new ArrayList<>(Arrays.asList("0","1/2","1","2","3","5","8","13","20","40","100","?","coffee"));
         GridLayout myGridLayout =view.findViewById(R.id.ly_grid);
+        final TextView userActualAnswer = view.findViewById(R.id.tv_answer);
+        str_userActualAnswer = userActualAnswer.getText().toString();
 
         //fill grid with buttons
         for (int i=0; i<12; ++i)
@@ -140,6 +147,8 @@ public class VoteFragment extends Fragment
             public void onClick(View v)
             {
                 pressed_button_id = 12;
+                str_userActualAnswer = buttonText.get(pressed_button_id);
+                userActualAnswer.setText("Your answer: "+str_userActualAnswer);
             }
         });
         //set onClickListener for each button
@@ -153,43 +162,113 @@ public class VoteFragment extends Fragment
                 {
                     v.setSelected(true);
                     pressed_button_id=button.getId();
+                    str_userActualAnswer = buttonText.get(pressed_button_id);
+                    userActualAnswer.setText("Your answer: "+str_userActualAnswer);
                 }
             });
         }
-
-        Button btn_vote = view.findViewById(R.id.btn_Vote);
-        dbReference = FirebaseDatabase.getInstance().getReference("Answers");
-        btn_vote.setOnClickListener(new View.OnClickListener()
+        dbReference = FirebaseDatabase.getInstance().getReference().child("Question").child(mQuestionId);
+        dbReference.addValueEventListener(new ValueEventListener()
         {
             @Override
-            public void onClick(View view)
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot)
             {
-
-                answer = buttonText.get(pressed_button_id);
-                String msg =mUserName + " " + questionToAnswer + " "+ answer;
-                Log.i("Adatbazisba: ",msg);
-
-                //insert vote into database: loginName, title, vote
-                addAnswerToDB();
-
-                //start the second fragment, which has the list
-                AnswersFragment answersFragment = new AnswersFragment();
-                FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-                fragmentTransaction.replace(R.id.fg_placeholder,answersFragment.newInstance(mUserName,mGroupName));
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
-
+                questionState=dataSnapshot.child("state").getValue().toString();
+                Log.d("MYDEBUG","Question state onDataChanged: "+questionState);
             }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) { }
+        });
+
+        //this button will only be clickable if the user has not voted yet
+        final Button btn_vote = view.findViewById(R.id.btn_Vote);
+        userVoted = false;
+        dbReference = FirebaseDatabase.getInstance().getReference("Answers");
+        dbReference.addListenerForSingleValueEvent(new ValueEventListener()
+        {
+
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot)
+            {
+                ArrayList<Answer> answers= new ArrayList<>();
+                for(DataSnapshot data: dataSnapshot.getChildren())
+                {
+                    Answer answer = data.getValue(Answer.class);
+                    answers.add(answer);
+                }
+                for (Answer a: answers)
+                {
+                    if(a.getUserName().equals(mUserName) && a.getQuestionId().equals(mQuestionId))
+                    {
+                        userVoted = true;
+                        break;
+                    }
+                }
+                if (userVoted)
+                {
+                    btn_vote.setOnClickListener(new View.OnClickListener()
+                    {
+                        @Override
+                        public void onClick(View v)
+                        {
+                            Toast.makeText(getContext(), "You have already voted!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+                else
+                {
+                    //if the user has not voted, the button starts the voteFragment
+                    btn_vote.setOnClickListener(new View.OnClickListener()
+                    {
+                        @Override
+                        public void onClick(View view)
+                        {
+                            if (str_userActualAnswer.equals("Your answer: nothing"))
+                            {
+                                Toast.makeText(getContext(), "You must vote something!", Toast.LENGTH_SHORT).show();
+                            }
+                            else
+                            {
+                                if (questionState.equals("active"))
+                                {
+                                    answer = buttonText.get(pressed_button_id);
+                                    String msg =mUserName + " " + questionToAnswer + " "+ answer;
+                                    Log.i("Adatbazisba: ",msg);
+
+                                    //insert vote into database: loginName, title, vote
+                                    addAnswerToDB();
+
+                                    //start the second fragment, which has the list
+                                    AnswersFragment answersFragment = new AnswersFragment();
+                                    FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+                                    fragmentTransaction.replace(R.id.fg_placeholder,answersFragment.newInstance(mUserName,mGroupName));
+                                    fragmentTransaction.addToBackStack(null);
+                                    fragmentTransaction.commit();
+
+                                }
+                                else
+                                {
+                                    Toast.makeText(getContext(), "Sorry, can't vote! Inactive question.", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) { }
         });
 
     }
     public void addAnswerToDB()
     {
+        dbReference = FirebaseDatabase.getInstance().getReference("Answers");
         String id = dbReference.push().getKey();
         userAnswer = new Answer(id,mUserName,mGroupName,mQuestionId,answer);
         dbReference.child(id).setValue(userAnswer);
         Toast.makeText(getContext(), "Answer added", Toast.LENGTH_LONG).show();
     }
-
 
 }

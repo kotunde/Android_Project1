@@ -94,7 +94,6 @@ public class QuestionsFragment extends Fragment
         //RECYCLERVIEW
         // get the reference of RecyclerView
         recyclerView = view.findViewById(R.id.rv_questionList);
-        //recyclerView.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
         recyclerView.setLayoutManager(linearLayoutManager);
         //  call the constructor of RVAdapter to send the reference and data to Adapter
@@ -114,7 +113,8 @@ public class QuestionsFragment extends Fragment
         recyclerView.setAdapter(rvAdapter);
 
         dbReference = FirebaseDatabase.getInstance().getReference("Question");
-        dbReference.addListenerForSingleValueEvent(new ValueEventListener()
+        //this section causes duplicated data in recyclerView
+        /*dbReference.addListenerForSingleValueEvent(new ValueEventListener()
         {
            @Override
            public void onDataChange(@NonNull DataSnapshot dataSnapshot)
@@ -132,7 +132,7 @@ public class QuestionsFragment extends Fragment
                recyclerView.setAdapter(rvAdapter);
            }
            @Override
-           public void onCancelled(@NonNull DatabaseError databaseError) { }});
+           public void onCancelled(@NonNull DatabaseError databaseError) { }});*/
 
         //show up dialogFragment where admin can enter a new question
         final Button addQuestion = view.findViewById(R.id.btn_addQuestion);
@@ -176,8 +176,6 @@ public class QuestionsFragment extends Fragment
                 Toast.makeText(getContext(), "Some error ocurred", Toast.LENGTH_LONG).show();
             }
         });
-
-
 
     }
     public void showDialog()

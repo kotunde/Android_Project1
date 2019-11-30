@@ -90,6 +90,7 @@ public class AnswersFragment extends Fragment
 
         //for populate recycler view on start with data from firebase
         dbReference = FirebaseDatabase.getInstance().getReference().child("Answers");
+        /*
         dbReference.addListenerForSingleValueEvent(new ValueEventListener()
         {
             @Override
@@ -116,7 +117,7 @@ public class AnswersFragment extends Fragment
             {
 
             }
-        });
+        });*/
 
         //for update recyclerview on every new answer
         dbReference.addChildEventListener(new ChildEventListener()

@@ -55,7 +55,6 @@ public class AnswerAdapter extends RecyclerView.Adapter<AnswerAdapter.MyViewHold
     @Override
     public void onBindViewHolder(final MyViewHolder holder, final int position)
     {
-        Log.d("MYDEBUG","OnBindViewHolder called");
         // set the data in items
         Answer output = mDataset.get(position);
         // implement setOnClickListener event on item view.
@@ -63,7 +62,6 @@ public class AnswerAdapter extends RecyclerView.Adapter<AnswerAdapter.MyViewHold
         final String questionId = output.getQuestionId();
         //get question from database with questionId
         dbReference = FirebaseDatabase.getInstance().getReference("Question").child(questionId);
-        Log.d("MYDEBUG",questionId);
         dbReference.addListenerForSingleValueEvent(new ValueEventListener()
         {
             @Override

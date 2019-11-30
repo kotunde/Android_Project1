@@ -80,15 +80,16 @@ public class AnswersFragment extends Fragment
         //RECYCLERVIEW
         // get the reference of RecyclerView
         recyclerView = view.findViewById(R.id.rv_answerList);
-        //recyclerView.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
         recyclerView.setLayoutManager(linearLayoutManager);
         //  call the constructor of RVAdapter to send the reference and data to Adapter
         answerAdapter = new AnswerAdapter(getActivity(),answers);
         recyclerView.setAdapter(answerAdapter);
-	//for populate recycler view on start with data from firebase
+
+        //get db reference to Answers
         dbReference = FirebaseDatabase.getInstance().getReference("Answers");
-        dbReference.addListenerForSingleValueEvent(new ValueEventListener()
+        //populate recycler view on start with data from firebase
+        /*dbReference.addListenerForSingleValueEvent(new ValueEventListener()
         {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot)
@@ -109,9 +110,9 @@ public class AnswersFragment extends Fragment
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) { }
-        });
+        });*/
 
-		//for update recyclerview on every new answer
+		//update recyclerview on every new answer
         dbReference.addChildEventListener(new ChildEventListener()
         {
             @Override

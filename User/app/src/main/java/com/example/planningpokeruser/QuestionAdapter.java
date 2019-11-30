@@ -30,7 +30,7 @@ public class  QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.MyVie
     {
         this.context = context;
         this.mDataset = myDataset;
-        questionList = myDataset;
+        //questionList = myDataset;
         mListener = listener;
     }
 
@@ -90,5 +90,10 @@ public class  QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.MyVie
     {
         return mDataset.size();
     }
+    @Override
+    public long getItemId(int position) { return position; }
+
+    @Override
+    public int getItemViewType(int position) { return position; }
 
 }

@@ -5,10 +5,12 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,11 +19,19 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 
 public class StartFragment extends Fragment
 {
 
+
+    DatabaseReference dbReference;
+    boolean inputError;
 
     public StartFragment()
     {
@@ -60,15 +70,56 @@ public class StartFragment extends Fragment
             @Override
             public void onClick(View v)
             {
-                //Log.i("Debug","Button pushed");
                 //send the two input string to the next fragment
-                String str_userName = et_userName.getText().toString();
-                String str_groupName = et_groupName.getText().toString();
-                QuestionsFragment questionsFragment = new QuestionsFragment();
-                FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
-                fragmentTransaction.replace(R.id.fg_placeholder,questionsFragment.newInstance(str_userName,str_groupName));
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
+                final String str_userName = et_userName.getText().toString();
+                final String str_groupName = et_groupName.getText().toString();
+                inputError = false;
+                if (TextUtils.isEmpty(str_userName))
+                {
+                    et_userName.setError("Username required");
+                    inputError=true;
+                }
+                if (TextUtils.isEmpty(str_groupName))
+                {
+                    et_groupName.setError("Groupname required");
+                    inputError=true;
+                }
+                dbReference = FirebaseDatabase.getInstance().getReference("Question");
+                dbReference.addListenerForSingleValueEvent(new ValueEventListener()
+                {
+                    boolean groupExists=false;
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot)
+                    {
+                        for(DataSnapshot data: dataSnapshot.getChildren())
+                        {
+                            Question question = data.getValue(Question.class);
+                            if(question.getGroupName().equals(str_groupName) && !(TextUtils.isEmpty(str_userName)))
+                            {
+                                groupExists=true;
+                                break;
+                            }
+
+                        }
+                        if (!groupExists)
+                        {
+                            et_groupName.setError("Group doesn't exist!");
+                            inputError=true;
+                        }
+                        if (!inputError)
+                        {
+                            QuestionsFragment questionsFragment = new QuestionsFragment();
+                            FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+                            fragmentTransaction.replace(R.id.fg_placeholder,questionsFragment.newInstance(str_userName,str_groupName));
+                            fragmentTransaction.addToBackStack(null);
+                            fragmentTransaction.commit();
+
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) { }
+                });
 
             }
         });

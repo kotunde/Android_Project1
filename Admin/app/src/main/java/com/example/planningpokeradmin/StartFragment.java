@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,8 +25,7 @@ import android.widget.TextView;
  */
 public class StartFragment extends Fragment
 {
-
-
+    boolean inputError;
     public StartFragment()
     {
         // Required empty public constructor
@@ -63,16 +63,29 @@ public class StartFragment extends Fragment
             @Override
             public void onClick(View v)
             {
-                //Log.i("Debug","Button pushed");
                 //send the two input string to the next fragment
                 String str_adminName = et_adminName.getText().toString();
                 String str_groupName = et_groupName.getText().toString();
-                QuestionsFragment questionsFragment = new QuestionsFragment();
-                FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
-                fragmentTransaction.replace(R.id.fg_placeholder,questionsFragment.newInstance(str_adminName,str_groupName));
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
-
+                inputError = false;
+                //check if fields are filled correctly
+                if (TextUtils.isEmpty(str_adminName))
+                {
+                    et_adminName.setError("Admin name required");
+                    inputError = true;
+                }
+                if (TextUtils.isEmpty(str_groupName))
+                {
+                    et_groupName.setError("Groupname required");
+                    inputError = true;
+                }
+                if (!inputError)
+                {
+                    QuestionsFragment questionsFragment = new QuestionsFragment();
+                    FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+                    fragmentTransaction.replace(R.id.fg_placeholder,questionsFragment.newInstance(str_adminName,str_groupName));
+                    fragmentTransaction.addToBackStack(null);
+                    fragmentTransaction.commit();
+                }
             }
         });
 

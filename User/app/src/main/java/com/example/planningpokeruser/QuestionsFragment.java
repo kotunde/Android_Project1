@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,6 +46,7 @@ public class QuestionsFragment extends Fragment
     QuestionAdapter questionAdapter;
     RecyclerView recyclerView;
     ArrayList<String> mKeys = new ArrayList<String>();
+    Boolean userVoted;
 
     public QuestionsFragment()
     {
@@ -80,7 +82,7 @@ public class QuestionsFragment extends Fragment
         // Inflate the layout for this fragment
         View retView = inflater.inflate(R.layout.fragment_questions, container, false);
         initView(retView);
-        recyclerView.setAdapter(questionAdapter);
+        //recyclerView.setAdapter(questionAdapter);
         return retView;
     }
 
@@ -94,34 +96,71 @@ public class QuestionsFragment extends Fragment
         //RECYCLERVIEW
         // get the reference of RecyclerView
         recyclerView = view.findViewById(R.id.rv_questionList);
-        //recyclerView.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
         recyclerView.setLayoutManager(linearLayoutManager);
         //  call the constructor of QuesetionAdapter to send the reference and data to Adapter
         final QuestionAdapter.RecyclerViewClickListener listener = new QuestionAdapter.RecyclerViewClickListener()
         {
             @Override
-            public void onClick(String questionId)
+            public void onClick(final String questionId)
             {
-                //Toast.makeText(getContext(), "Votefragment called", Toast.LENGTH_LONG).show();
-                VoteFragment answersFragment = new VoteFragment();
-                FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
-                fragmentTransaction.replace(R.id.fg_placeholder,answersFragment.newInstance(mUserName,mGroupName,questionId));
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
+                dbReference = FirebaseDatabase.getInstance().getReference("Answers");
+                userVoted = false;
+                dbReference.addListenerForSingleValueEvent(new ValueEventListener()
+                {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot)
+                    {
+                        ArrayList<Answer> answers= new ArrayList<>();
+                        for(DataSnapshot data: dataSnapshot.getChildren())
+                        {
+                            Answer answer = data.getValue(Answer.class);
+                            answers.add(answer);
+                        }
+                        for (Answer a : answers) {
+                            if (a.getUserName().equals(mUserName) && a.getQuestionId().equals(questionId)) {
+                                userVoted = true;
+                                break;
+                            }
+                        }
 
+                        if (userVoted)
+                        {
+                            //start answerFragment to see the answers in real time for this question
+                            AnswersFragment answersFragment = new AnswersFragment();
+                            FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+                            fragmentTransaction.replace(R.id.fg_placeholder,answersFragment.newInstance(mUserName,mGroupName));
+                            fragmentTransaction.addToBackStack(null);
+                            fragmentTransaction.commit();
+                        }
+                        else
+                        {
+                            //start voteFragment to vote this quesetion
+                            VoteFragment voteFragment = new VoteFragment();
+                            FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+                            fragmentTransaction.replace(R.id.fg_placeholder,voteFragment.newInstance(mUserName,mGroupName,questionId));
+                            fragmentTransaction.addToBackStack(null);
+                            fragmentTransaction.commit();
+                        }
+                    }
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError){}
+                });
             }
         };
         questionAdapter = new QuestionAdapter(getActivity(),questionList,listener);
         recyclerView.setAdapter(questionAdapter);
 
         //get data from database
+        /*
         dbReference.addListenerForSingleValueEvent(new ValueEventListener()
         {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot)
             {
+                Log.d("MYDEBUG","OnDataChange fuggveny meghivodott");
                 questionList.clear();
+                Log.d("MYDEBUG","LISTA MERETE LEKREDEZES ELOTT" + questionList.size());
                 for (DataSnapshot questionSnapshot: dataSnapshot.getChildren())
                 {
                     Question question = questionSnapshot.getValue(Question.class);
@@ -133,6 +172,7 @@ public class QuestionsFragment extends Fragment
                     }
 
                 }
+                Log.d("MYDEBUG","LISTA MERETE LEKREDEZES UTAN" + questionList.size());
                 questionAdapter = new QuestionAdapter(getActivity(),questionList,listener);
                 recyclerView.setAdapter(questionAdapter);
                 //questionAdapter.notifyDataSetChanged();
@@ -143,7 +183,7 @@ public class QuestionsFragment extends Fragment
             {
 
             }
-        });
+        });*/
 
         dbReference.addChildEventListener(new ChildEventListener()
         {
@@ -157,9 +197,7 @@ public class QuestionsFragment extends Fragment
                     questionList.add(newQuesetion);
                     String key = dataSnapshot.getKey();
                     mKeys.add(key);
-                    //questionAdapter = new QuestionAdapter(getActivity(),questionList,listener);
-                    //RecyclerView recyclerView = view.findViewById(R.id.rv_questionList);
-                    //recyclerView.setHasFixedSize(true);
+                    questionAdapter = new QuestionAdapter(getActivity(),questionList,listener);
                     LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
                     recyclerView.setLayoutManager(linearLayoutManager);
                     recyclerView.setAdapter(questionAdapter);
@@ -176,10 +214,11 @@ public class QuestionsFragment extends Fragment
                     int index = mKeys.indexOf(key);
                     questionList.set(index,question);
                 }
-                LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
-                recyclerView.setLayoutManager(linearLayoutManager);
-                recyclerView.setAdapter(questionAdapter);
-                //questionAdapter.notifyDataSetChanged();
+                //LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
+                //recyclerView.setLayoutManager(linearLayoutManager);
+                //questionAdapter = new QuestionAdapter(getActivity(),questionList,listener);
+                //recyclerView.setAdapter(questionAdapter);
+                questionAdapter.notifyDataSetChanged();
             }
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) { }
